@@ -1,0 +1,4 @@
+.env
+customenv/
+sales_prediction_model.joblib
+sales_prediction_model2.joblib
