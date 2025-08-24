@@ -48,3 +48,7 @@ python train.py
 streamlit run app.py
 ```
 
+## 7. Result
+
+![Result](https://github.com/Nirupam-Naragund/Traditional-ML-powered-with-GenAI---Sales-prediction/blob/main/Screenshot%202025-08-24%20174237.png)
+
