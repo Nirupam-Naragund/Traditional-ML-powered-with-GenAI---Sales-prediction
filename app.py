@@ -47,7 +47,6 @@ def predict_sales(query, model_pipeline):
     You are an expert data analyst. A manager has asked a question about predicting sales.
     Your task is to extract the key features from the manager's query and format them into a JSON object.
     You must only provide the JSON object in your response. Do not include any other text.
-    If a feature is not mentioned, use a reasonable default value.
     The required features are: category, brand, region, loyalty_tier, price, discount, qty_sold, ad_spend, channel, competitor_price, stock, age, day_of_year, product_id, customer_id.
     Do not add null or None values.
     
