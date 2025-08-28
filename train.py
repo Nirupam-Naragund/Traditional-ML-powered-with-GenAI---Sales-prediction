@@ -7,27 +7,24 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_absolute_error
 import joblib
 
-MODEL_PATH = 'sales_prediction_model.joblib'
+MODEL_PATH = 'sales_prediction_model3.joblib'
 
 def train_model():
     """
     Loads data, preprocesses it, and trains a RandomForestRegressor model
-    to predict sales revenue.
+    to predict sales revenue. Also stores medians for numeric features.
     """
     print("Training the sales prediction model...")
 
     try:
-        # Load the CSV file.
+        # Load the CSV file
         df = pd.read_csv('sales_data_5000.csv')
     except FileNotFoundError:
         print("Error: The 'sales_data_5000.csv' file was not found. Please run sales_data_generator.py first.")
         return
 
-    # Drop the holiday column as it's a binary categorical feature which might not add much value.
-    # The competitor price is also a good indicator so we will keep it.
+    # Drop the holiday column and process dates
     df = df.drop(columns=['holiday'])
-
-    # Feature Engineering: Convert date to a numerical feature (day of the year)
     df['date'] = pd.to_datetime(df['date'])
     df['day_of_year'] = df['date'].dt.dayofyear
     df = df.drop(columns=['date'])
@@ -36,46 +33,48 @@ def train_model():
     X = df.drop(columns=['revenue'])
     y = df['revenue']
 
-    # --- NEW: Split the data into training and testing sets ---
+    # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Identify categorical and numerical features
+    # Categorical & numerical features
     categorical_features = ['category', 'brand', 'region', 'loyalty_tier', 'channel', 'product_id', 'customer_id']
     numerical_features = ['age', 'price', 'discount', 'qty_sold', 'ad_spend', 'competitor_price', 'stock', 'day_of_year']
 
-    # Create a preprocessor pipeline for one-hot encoding categorical features
+    # Preprocessor for categorical features
     preprocessor = ColumnTransformer(
-        transformers=[
-            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
-        ],
+        transformers=[('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)],
         remainder='passthrough'
     )
 
-    # Create the full model pipeline
+    # Model pipeline
     model_pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('regressor', RandomForestRegressor(n_estimators=100, random_state=42))
     ])
 
-    # Fit the pipeline to the training data only
+    # Train model
     model_pipeline.fit(X_train, y_train)
 
-    # --- NEW: Evaluate the model on the test data ---
+    # Evaluate model
     y_pred = model_pipeline.predict(X_test)
-
-    # Calculate evaluation metrics
     r2 = r2_score(y_test, y_pred)
     mae = mean_absolute_error(y_test, y_pred)
-
     print("\n--- Model Evaluation ---")
     print(f"R-squared (R^2) Score: {r2:.4f}")
     print(f"Mean Absolute Error (MAE): ${mae:,.2f}")
     print("------------------------")
 
-    # Save the trained model and preprocessor
-    joblib.dump(model_pipeline, MODEL_PATH)
+    # Save medians for numeric features
+    numeric_medians = X_train[numerical_features].median().to_dict()
 
-    print("Model training complete. Model saved to 'sales_prediction_model.joblib'.")
+    # Save model & medians together
+    model_artifacts = {
+        "model_pipeline": model_pipeline,
+        "numeric_medians": numeric_medians
+    }
+    joblib.dump(model_artifacts, MODEL_PATH)
+    print("Model and medians saved to 'sales_prediction_model.joblib'.")
 
 if __name__ == "__main__":
     train_model()
+
