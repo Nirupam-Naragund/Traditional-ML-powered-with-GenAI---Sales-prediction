@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_absolute_error
 import joblib
 
-MODEL_PATH = 'sales_prediction_model3.joblib'
+MODEL_PATH = 'sales_prediction_model.joblib'
 
 def train_model():
     """
@@ -23,7 +23,7 @@ def train_model():
         print("Error: The 'sales_data_5000.csv' file was not found. Please run sales_data_generator.py first.")
         return
 
-    # Drop the holiday column and process dates
+    # Drop holiday column and process dates
     df = df.drop(columns=['holiday'])
     df['date'] = pd.to_datetime(df['date'])
     df['day_of_year'] = df['date'].dt.dayofyear
@@ -77,4 +77,3 @@ def train_model():
 
 if __name__ == "__main__":
     train_model()
-

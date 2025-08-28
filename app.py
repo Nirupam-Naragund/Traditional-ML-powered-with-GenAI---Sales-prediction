@@ -9,7 +9,7 @@ import os
 
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_PATH = 'sales_prediction_model3.joblib'
+MODEL_PATH = 'sales_prediction_model.joblib'
 
 @st.cache_resource
 def load_model():
@@ -29,53 +29,12 @@ def predict_sales(query, model_pipeline, numeric_medians):
 
     # Step 1: Extract features using GenAI
     extract_prompt = f"""
-    You are an expert data analyst. A manager has asked a question about predicting sales.
-    Your task is to extract the key features from the manager's query and format them into a JSON object.
-    You must only provide the JSON object in your response. Do not include any other text.
-    If a feature is not mentioned, use a reasonable default value.
-    The required features are: category, brand, region, loyalty_tier, price, discount, qty_sold, ad_spend, channel, competitor_price, stock, age, day_of_year, product_id, customer_id.
-    Do not add null or None values.
-    
-    The manager's question is: "{query}"
-
-    Example output:
-    {{
-      "brand": "Nike",
-      "category": "Sneakers",
-      "region": "Bangalore",
-      "price": 2500,
-      "ad_spend": 5000,
-      "channel": "Facebook",
-      "qty_sold": 25
-    }}
+    Extract sales features as JSON. If any feature is missing, skip it (do NOT put null).
+    Required keys: category, brand, region, loyalty_tier, price, discount, qty_sold, ad_spend, channel, competitor_price, stock, age, day_of_year, product_id, customer_id.
+    Manager query: "{query}"
     """
-    
-    payload_extract = {
-        "contents": [{"parts": [{"text": extract_prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "responseSchema": {
-                "type": "OBJECT",
-                "properties": {
-                    "brand": {"type": "STRING"},
-                    "category": {"type": "STRING"},
-                    "region": {"type": "STRING"},
-                    "loyalty_tier": {"type": "STRING"},
-                    "price": {"type": "NUMBER"},
-                    "discount": {"type": "NUMBER"},
-                    "qty_sold": {"type": "NUMBER"},
-                    "ad_spend": {"type": "NUMBER"},
-                    "channel": {"type": "STRING"},
-                    "competitor_price": {"type": "NUMBER"},
-                    "stock": {"type": "NUMBER"},
-                    "age": {"type": "NUMBER"},
-                    "day_of_year": {"type": "NUMBER"},
-                    "product_id": {"type": "STRING"},
-                    "customer_id": {"type": "STRING"}
-                }
-            }
-        }
-    }
+
+    payload_extract = {"contents": [{"parts": [{"text": extract_prompt}]}], "generationConfig": {"responseMimeType": "application/json"}}
 
     try:
         with st.spinner("Analyzing your query with GenAI..."):
@@ -110,7 +69,7 @@ def predict_sales(query, model_pipeline, numeric_medians):
         st.error(f"Prediction error: {e}")
         return "Could not make a prediction due to missing or invalid data."
 
-    # Step 4: Get top contributing factors
+    # Step 4: Top contributing factors
     feature_importances = model_pipeline.named_steps['regressor'].feature_importances_
     one_hot_features = model_pipeline.named_steps['preprocessor'].named_transformers_['cat'].get_feature_names_out()
     feature_names = np.concatenate([one_hot_features, num_features])
@@ -119,7 +78,7 @@ def predict_sales(query, model_pipeline, numeric_medians):
     top_features = [feature_names[i].split('__')[-1] for i in sorted_idx[:3]]
     top_features_string = ', '.join(top_features)
 
-    # Step 5: Generate AI response
+    # Step 5: AI-generated response
     respond_prompt = f"""
     Original query: "{query}"
     Predicted sales revenue: ${prediction:,.2f}
@@ -141,7 +100,6 @@ def predict_sales(query, model_pipeline, numeric_medians):
         final_response = f"Predicted sales revenue: ${prediction:,.2f}. Top factors: {top_features_string}"
 
     return final_response
-
 
 # ---- Streamlit UI ----
 st.set_page_config(layout="wide")
