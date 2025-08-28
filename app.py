@@ -29,12 +29,53 @@ def predict_sales(query, model_pipeline, numeric_medians):
 
     # Step 1: Extract features using GenAI
     extract_prompt = f"""
-    Extract sales features as JSON. If any feature is missing, skip it (do NOT put null).
-    Required keys: category, brand, region, loyalty_tier, price, discount, qty_sold, ad_spend, channel, competitor_price, stock, age, day_of_year, product_id, customer_id.
-    Manager query: "{query}"
-    """
+    You are an expert data analyst. A manager has asked a question about predicting sales.
+    Your task is to extract the key features from the manager's query and format them into a JSON object.
+    You must only provide the JSON object in your response. Do not include any other text.
+    If a feature is not mentioned, use a reasonable default value.
+    The required features are: category, brand, region, loyalty_tier, price, discount, qty_sold, ad_spend, channel, competitor_price, stock, age, day_of_year, product_id, customer_id.
+    Do not add null or None values.
+    
+    The manager's question is: "{query}"
 
-    payload_extract = {"contents": [{"parts": [{"text": extract_prompt}]}], "generationConfig": {"responseMimeType": "application/json"}}
+    Example output:
+    {{
+      "brand": "Nike",
+      "category": "Sneakers",
+      "region": "Bangalore",
+      "price": 2500,
+      "ad_spend": 5000,
+      "channel": "Facebook",
+      "qty_sold": 25
+    }}
+    """
+    
+    payload_extract = {
+        "contents": [{"parts": [{"text": extract_prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "OBJECT",
+                "properties": {
+                    "brand": {"type": "STRING"},
+                    "category": {"type": "STRING"},
+                    "region": {"type": "STRING"},
+                    "loyalty_tier": {"type": "STRING"},
+                    "price": {"type": "NUMBER"},
+                    "discount": {"type": "NUMBER"},
+                    "qty_sold": {"type": "NUMBER"},
+                    "ad_spend": {"type": "NUMBER"},
+                    "channel": {"type": "STRING"},
+                    "competitor_price": {"type": "NUMBER"},
+                    "stock": {"type": "NUMBER"},
+                    "age": {"type": "NUMBER"},
+                    "day_of_year": {"type": "NUMBER"},
+                    "product_id": {"type": "STRING"},
+                    "customer_id": {"type": "STRING"}
+                }
+            }
+        }
+    }
 
     try:
         with st.spinner("Analyzing your query with GenAI..."):
